@@ -72,3 +72,15 @@ class Memory:
             return self.wram.read_byte(addr - ECHO_START)
         else:
             raise Exception(f"Invalid mem read: {hex(addr).upper()[2:]}")
+
+    def write_byte(self, addr: int, val: int):
+        if self.rom.start <= addr and addr < self.rom.end:
+            raise Exception(
+                f"Attempted to write to address in ROM space! Absolute: {hex(addr).upper()[2:]}; Relative: {hex(addr - self.rom.start).upper()[2:]}"
+            )
+        elif self.wram.start <= addr and addr < self.wram.end:
+            return self.wram.write_byte(addr - self.wram.start, val)
+        elif ECHO_START <= addr and addr < ECHO_END:
+            return self.wram.write_byte(addr - ECHO_START, val)
+        else:
+            raise Exception(f"Invalid mem write: {hex(addr).upper()[2:]}")
