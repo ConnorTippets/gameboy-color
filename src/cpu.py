@@ -33,6 +33,13 @@ class CPU:
                 return
             case 0b10101111:  # XOR A
                 self.registers["A"] = 0x00
+                return
+            case 0b00100001:  # LD HL, IMM16
+                imm = self.memory.read_word(self.pc)
+                self.pc += 2
+                self.registers["L"] = imm & 0xFF
+                self.registers["H"] = (imm & 0xFF00) >> 8
+                return
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"

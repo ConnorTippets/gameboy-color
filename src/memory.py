@@ -16,7 +16,7 @@ class Readable:
         return self.buf[addr]
 
     def read_word(self, addr: int) -> int:
-        return (self.buf[addr + 1] << 4) & self.buf[addr]
+        return (self.buf[addr + 1] << 8) | self.buf[addr]
 
 
 class Writeable:
