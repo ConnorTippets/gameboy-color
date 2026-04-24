@@ -279,6 +279,9 @@ class CPU:
                     self.registers["F"] &= ~HALF_CARRY_FLAG
             case 0b00010101:  # DEC D
                 self._dec_reg("D")
+            case 0b00010110:  # LD D, IMM8
+                self.registers["D"] = self.memory.read_byte(self.pc)
+                self.pc += 1
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
