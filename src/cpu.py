@@ -2,6 +2,8 @@ from .memory import Memory
 from .util import sign_convert
 
 ZERO_FLAG = 0b10000000
+SUB_FLAG = 0b01000000
+HALF_CARRY_FLAG = 0b00100000
 
 
 class CPU:
@@ -35,6 +37,8 @@ class CPU:
                 #     + bin(self.registers["H"])[2:],
                 #     "0" * (8 - len(bin(1 << 7)[2:])) + bin(1 << 7)[2:],
                 # )
+                self.registers["F"] &= ~SUB_FLAG
+
                 if not ((1 << 7) & self.registers["H"]):
                     self.registers["F"] |= ZERO_FLAG
             case _:
@@ -46,6 +50,18 @@ class CPU:
         imm = self.memory.read_byte(self.pc)
         self.pc += 1
         self.registers[reg] = imm
+
+    def _inc_reg(self, reg: str):
+        result = (self.registers[reg] + 1) & 0xFF
+        self.registers["F"] &= ~SUB_FLAG
+
+        if result == 0:
+            self.registers["F"] |= ZERO_FLAG
+
+        if (self.registers[reg] & 0xF) + 1 > 0xF:
+            self.registers["F"] |= HALF_CARRY_FLAG
+
+        self.registers[reg] = result
 
     def step(self):
         opcode = self.memory.read_byte(self.pc)
@@ -86,6 +102,8 @@ class CPU:
                 self.memory.write_byte(
                     0xFF00 | self.registers["C"], self.registers["A"]
                 )
+            case 0b00001100:  # INC C
+                self._inc_reg("C")
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
