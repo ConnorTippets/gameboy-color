@@ -243,6 +243,11 @@ class CPU:
             case 0b00011110:  # LD E, IMM8
                 self.registers["E"] = self.memory.read_byte(self.pc)
                 self.pc += 1
+            case 0b11110000:  # LDH A, IMM8
+                self.registers["A"] = self.memory.read_byte(
+                    0xFF00 | self.memory.read_byte(self.pc)
+                )
+                self.pc += 1
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
