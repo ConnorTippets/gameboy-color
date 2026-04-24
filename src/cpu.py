@@ -103,6 +103,12 @@ class CPU:
         self.registers[reg_high] = (val & 0xFF00) >> 8
         self.registers[reg_low] = val & 0xFF
 
+    def _jr_cond_imm8(self, cond):
+        jmp = self.memory.read_byte(self.pc)
+        self.pc += 1
+        if cond:
+            self.pc += sign_convert(jmp)
+
     def step(self):
         opcode = self.memory.read_byte(self.pc)
         self.pc += 1
@@ -126,10 +132,7 @@ class CPU:
             case 0b11001011:  # 0xCB: Read next byte for opcode
                 self.cb_step()
             case 0b00100000:  # JR NZ, IMM8
-                jmp = self.memory.read_byte(self.pc)
-                self.pc += 1
-                if not (ZERO_FLAG & self.registers["F"]):
-                    self.pc += sign_convert(jmp)
+                self._jr_cond_imm8(not (ZERO_FLAG & self.registers["F"]))
             case 0b00001110:  # LD C, IMM8
                 self._ld_reg_imm8("C")
             case 0b00111110:  # LD A, IMM8
@@ -229,6 +232,8 @@ class CPU:
                 self.pc += 2
             case 0b00111101:  # DEC A
                 self._dec_reg("A")
+            case 0b00101000:  # JR Z, IMM8
+                self._jr_cond_imm8(self.registers["F"] & ZERO_FLAG)
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
