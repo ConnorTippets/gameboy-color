@@ -259,7 +259,7 @@ class CPU:
             case 0b10010000:  # SUB A, B
                 reg = self.registers["A"]
                 value = self.registers["B"]
-                self.registers["A"] = reg - value
+                self.registers["A"] = (reg - value) & 0xFF
 
                 self.registers["F"] |= SUB_FLAG
 
