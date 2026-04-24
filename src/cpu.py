@@ -193,6 +193,10 @@ class CPU:
                 self._set_reg16("H", "L", hl)
             case 0b00100011:  # INC HL
                 self._inc_reg16("H", "L")
+            case 0b11001001:  # RET
+                addr = self.memory.read_word(self.sp)
+                self.sp += 2
+                self.pc = addr
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
