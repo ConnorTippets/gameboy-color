@@ -11,6 +11,9 @@ ECHO_END = 0xFDFF
 VRAM_SIZE = 8 * 1024
 DEFAULT_VRAM_START = 0x8000
 
+IO_SIZE = 127
+DEFAULT_IO_START = 0xFF00
+
 
 class Readable:
     buf: bytearray
@@ -76,12 +79,36 @@ class BootROM(Readable):
         self.buf = bytearray(0x0100)
 
 
+class IO(Readable, Writeable, MemoryMapped):
+    def __init__(self):
+        self.buf = bytearray(IO_SIZE)
+        self.start = DEFAULT_IO_START
+        self.size = IO_SIZE
+
+    def read_byte(self, addr: int) -> int:
+        if 0xFF10 <= addr and addr <= 0xFF26:
+            return self.buf[addr]
+        else:
+            return 0xFF
+
+    def read_word(self, addr: int) -> int:
+        if 0xFF10 <= addr and addr <= 0xFF26:
+            return (self.buf[addr + 1] << 8) | self.buf[addr]
+        else:
+            return 0xFFFF
+
+    def write_byte(self, addr: int, val: int):
+        if 0xFF10 <= addr and addr <= 0xFF26:
+            self.buf[addr] = val
+
+
 class Memory:
     def __init__(self):
         self.boot_rom = BootROM()
         self.rom = ROM()
         self.wram = WRAM()
         self.vram = VRAM()
+        self.io = IO()
 
     def read_byte(self, addr: int) -> int:
         if 0x0000 <= addr < 0x0100:
@@ -94,6 +121,8 @@ class Memory:
             return self.wram.read_byte(addr - ECHO_START)
         elif self.vram.start <= addr and addr < self.vram.end:
             return self.vram.read_byte(addr - self.vram.start)
+        elif self.io.start <= addr and addr < self.io.end:
+            return self.io.read_byte(addr - self.io.start)
         else:
             raise Exception(f"Invalid mem read: {hex(addr).upper()[2:]}")
 
@@ -108,6 +137,8 @@ class Memory:
             return self.wram.read_word(addr - ECHO_START)
         elif self.vram.start <= addr and addr < self.vram.end:
             return self.vram.read_word(addr - self.vram.start)
+        elif self.io.start <= addr and addr < self.io.end:
+            return self.io.read_word(addr - self.io.start)
         else:
             raise Exception(f"Invalid mem read: {hex(addr).upper()[2:]}")
 
@@ -122,6 +153,8 @@ class Memory:
             return self.wram.write_byte(addr - ECHO_START, val)
         elif self.vram.start <= addr and addr < self.vram.end:
             return self.vram.write_byte(addr - self.vram.start, val)
+        elif self.io.start <= addr and addr < self.io.end:
+            return self.io.write_byte(addr - self.io.start, val)
         else:
             raise Exception(f"Invalid mem write: {hex(addr).upper()[2:]}")
 
