@@ -78,10 +78,14 @@ class CPU:
                 self.pc += 1
                 if not (ZERO_FLAG & self.registers["F"]):
                     self.pc += sign_convert(jmp)
-            case 0b00001110:
-                self._ld_reg_imm8("C")  # LD C, IMM8
-            case 0b00111110:
-                self._ld_reg_imm8("A")  # LD A, IMM8
+            case 0b00001110:  # LD C, IMM8
+                self._ld_reg_imm8("C")
+            case 0b00111110:  # LD A, IMM8
+                self._ld_reg_imm8("A")
+            case 0b11100010:  # LDH C, A
+                self.memory.write_byte(
+                    0xFF00 | self.registers["C"], self.registers["A"]
+                )
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
