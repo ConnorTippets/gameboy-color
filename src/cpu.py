@@ -81,6 +81,9 @@ class CPU:
 
         self.registers[reg] = result
 
+    def _inc_reg16(self, reg_high: str, reg_low: str):
+        self._set_reg16(reg_high, reg_low, self._get_reg16(reg_high, reg_low) + 1)
+
     def _dec_reg(self, reg: str):
         result = (self.registers[reg] + 1) & 0xFF
         self.registers["F"] |= SUB_FLAG
@@ -188,6 +191,8 @@ class CPU:
                 self.memory.write_byte(hl, self.registers["A"])
                 hl += 1
                 self._set_reg16("H", "L", hl)
+            case 0b00100011:  # INC HL
+                self._inc_reg16("H", "L")
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
