@@ -104,6 +104,11 @@ class CPU:
                 )
             case 0b00001100:  # INC C
                 self._inc_reg("C")
+            case 0b01110111:  # LD HL, A
+                hl = (self.registers["H"] << 8) | self.registers["L"]
+                self.memory.write_byte(hl, self.registers["A"])
+                self.registers["L"] = hl & 0xFF
+                self.registers["H"] = (hl & 0xFF00) >> 8
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
