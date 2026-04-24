@@ -40,7 +40,12 @@ class CPU:
                 self.registers["L"] = imm & 0xFF
                 self.registers["H"] = (imm & 0xFF00) >> 8
                 return
-            case 0b00110010:  # LD HL-, 
+            case 0b00110010:  # LD HL-, A
+                hl = (self.registers["H"] << 8) | self.registers["L"]
+                self.memory.write_byte(hl, self.registers["A"])
+                hl -= 1
+                self.registers["L"] = hl & 0xFF
+                self.registers["H"] = (hl & 0xFF00) >> 8
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
@@ -49,5 +54,9 @@ class CPU:
     def run(self):
         # placeholder, accurate timing will be stubbed in later
         while True:
+            instr = self.memory.read_byte(self.pc)
+            print(
+                hex(instr).upper()[2:], "0" * (8 - len(bin(instr)[2:])) + bin(instr)[2:]
+            )
             self.step()
             print(self.registers, self.pc, self.sp)
