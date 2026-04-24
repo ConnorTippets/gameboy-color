@@ -32,9 +32,12 @@ class CPU:
         match opcode:
             case 0b01111100:  # BIT 7, H
                 self.registers["F"] &= ~SUB_FLAG
+                self.registers["F"] |= HALF_CARRY_FLAG
 
                 if not ((1 << 7) & self.registers["H"]):
                     self.registers["F"] |= ZERO_FLAG
+                else:
+                    self.registers["F"] &= ~ZERO_FLAG
             case 0b00010001:  # RL C
                 val = self.registers["C"] << 1
                 lsb = (val & 0xFF) | ((self.registers["F"] & CARRY_FLAG) >> 4)
@@ -75,9 +78,13 @@ class CPU:
 
         if result == 0:
             self.registers["F"] |= ZERO_FLAG
+        else:
+            self.registers["F"] &= ~ZERO_FLAG
 
         if (self.registers[reg] & 0xF) + 1 > 0xF:
             self.registers["F"] |= HALF_CARRY_FLAG
+        else:
+            self.registers["F"] &= ~HALF_CARRY_FLAG
 
         self.registers[reg] = result
 
@@ -90,9 +97,13 @@ class CPU:
 
         if result == 0:
             self.registers["F"] |= ZERO_FLAG
+        else:
+            self.registers["F"] &= ~ZERO_FLAG
 
         if (result & 0xF) == 0xF:
             self.registers["F"] |= HALF_CARRY_FLAG
+        else:
+            self.registers["F"] &= ~HALF_CARRY_FLAG
 
         self.registers[reg] = result
 
@@ -122,12 +133,17 @@ class CPU:
                 self.sp = imm
             case 0b10101111:  # XOR A
                 self.registers["A"] = 0x00
+
+                self.registers["F"] |= ZERO_FLAG
+                self.registers["F"] &= ~SUB_FLAG
+                self.registers["F"] &= ~HALF_CARRY_FLAG
+                self.registers["F"] &= ~CARRY_FLAG
             case 0b00100001:  # LD HL, IMM16
                 self._ld_reg16_imm16("H", "L")
             case 0b00110010:  # LD [HL-], A
                 hl = self._get_reg16("H", "L")
                 self.memory.write_byte(hl, self.registers["A"])
-                hl -= 1
+                hl = (hl - 1) & 0xFF
                 self._set_reg16("H", "L", hl)
             case 0b11001011:  # 0xCB: Read next byte for opcode
                 self.cb_step()
@@ -146,8 +162,6 @@ class CPU:
             case 0b01110111:  # LD HL, A
                 hl = self._get_reg16("H", "L")
                 self.memory.write_byte(hl, self.registers["A"])
-                self.registers["L"] = hl & 0xFF
-                self.registers["H"] = (hl & 0xFF00) >> 8
             case 0b11100000:  # LDH IMM8, A
                 self.memory.write_byte(
                     0xFF00 | self.memory.read_byte(self.pc), self.registers["A"]
@@ -192,7 +206,7 @@ class CPU:
             case 0b00100010:  # LD [HL+], A
                 hl = self._get_reg16("H", "L")
                 self.memory.write_byte(hl, self.registers["A"])
-                hl += 1
+                hl = (hl + 1) & 0xFF
                 self._set_reg16("H", "L", hl)
             case 0b00100011:  # INC HL
                 self._inc_reg16("H", "L")
