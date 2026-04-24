@@ -299,6 +299,27 @@ class CPU:
                 self.pc += 1 + sign_convert(self.memory.read_byte(self.pc))
             case 0b00101110:  # LD L, IMM8
                 self._ld_reg_imm8("L")
+            case 0b10111110:  # CP [HL]
+                value = self.memory.read_byte(self._get_reg16("H", "L"))
+                result = value - self.registers["A"]
+                self.pc += 1
+
+                self.registers["F"] |= SUB_FLAG
+
+                if result == 0:
+                    self.registers["F"] |= ZERO_FLAG
+                else:
+                    self.registers["F"] &= ~ZERO_FLAG
+
+                if value > self.registers["A"]:
+                    self.registers["F"] |= CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~CARRY_FLAG
+
+                if (self.registers["A"] & 0xF) < (value & 0xF):
+                    self.registers["F"] |= HALF_CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~HALF_CARRY_FLAG
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
