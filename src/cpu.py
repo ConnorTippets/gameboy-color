@@ -4,6 +4,7 @@ from .util import sign_convert
 ZERO_FLAG = 0b10000000
 SUB_FLAG = 0b01000000
 HALF_CARRY_FLAG = 0b00100000
+CARRY_FLAG = 0b00010000
 
 
 class CPU:
@@ -30,17 +31,28 @@ class CPU:
 
         match opcode:
             case 0b01111100:  # BIT 7, H
-                # print(
-                #     "hi",
-                #     self.registers["H"],
-                #     "0" * (8 - len(bin(self.registers["H"])[2:]))
-                #     + bin(self.registers["H"])[2:],
-                #     "0" * (8 - len(bin(1 << 7)[2:])) + bin(1 << 7)[2:],
-                # )
                 self.registers["F"] &= ~SUB_FLAG
 
                 if not ((1 << 7) & self.registers["H"]):
                     self.registers["F"] |= ZERO_FLAG
+            case 0b00010001:  # RL C
+                val = self.registers["C"] << 1
+                lsb = (val & 0xFF) | ((self.registers["F"] & CARRY_FLAG) >> 4)
+
+                if (val & 0xFF00) >> 8:
+                    self.registers["F"] |= CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~CARRY_FLAG
+
+                self.registers["F"] &= ~SUB_FLAG
+                self.registers["F"] &= ~HALF_CARRY_FLAG
+
+                if lsb == 0:
+                    self.registers["F"] |= ZERO_FLAG
+                else:
+                    self.registers["F"] &= ~ZERO_FLAG
+
+                self.registers["C"] = lsb
             case _:
                 raise Exception(
                     f"Unknown 0xCB instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
