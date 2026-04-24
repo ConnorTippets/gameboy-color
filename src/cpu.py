@@ -81,6 +81,18 @@ class CPU:
 
         self.registers[reg] = result
 
+    def _dec_reg(self, reg: str):
+        result = (self.registers[reg] + 1) & 0xFF
+        self.registers["F"] |= SUB_FLAG
+
+        if result == 0:
+            self.registers["F"] |= ZERO_FLAG
+
+        if (result & 0xF) == 0xF:
+            self.registers["F"] |= HALF_CARRY_FLAG
+
+        self.registers[reg] = result
+
     def _get_reg16(self, reg_high: str, reg_low: str) -> int:
         return (self.registers[reg_high] << 8) | self.registers[reg_low]
 
@@ -170,6 +182,8 @@ class CPU:
             case 0b11000001:  # POP BC
                 self._set_reg16("B", "C", self.memory.read_word(self.sp))
                 self.sp += 2
+            case 0b00000101:  # DEC B
+                self._dec_reg("B")
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
