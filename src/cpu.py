@@ -115,12 +115,11 @@ class CPU:
                 self.registers["A"] = 0x00
             case 0b00100001:  # LD HL, IMM16
                 self._ld_reg16_imm16("H", "L")
-            case 0b00110010:  # LD HL-, A
+            case 0b00110010:  # LD [HL-], A
                 hl = self._get_reg16("H", "L")
                 self.memory.write_byte(hl, self.registers["A"])
                 hl -= 1
-                self.registers["L"] = hl & 0xFF
-                self.registers["H"] = (hl & 0xFF00) >> 8
+                self._set_reg16("H", "L", hl)
             case 0b11001011:  # 0xCB: Read next byte for opcode
                 self.cb_step()
             case 0b00100000:  # JR NZ, IMM8
@@ -184,6 +183,11 @@ class CPU:
                 self.sp += 2
             case 0b00000101:  # DEC B
                 self._dec_reg("B")
+            case 0b00100010:  # LD [HL+], A
+                hl = self._get_reg16("H", "L")
+                self.memory.write_byte(hl, self.registers["A"])
+                hl += 1
+                self._set_reg16("H", "L", hl)
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
