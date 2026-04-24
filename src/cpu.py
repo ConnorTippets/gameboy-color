@@ -42,6 +42,11 @@ class CPU:
                     f"Unknown 0xCB instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
                 )
 
+    def _ld_reg_imm8(self, reg: str):
+        imm = self.memory.read_byte(self.pc)
+        self.pc += 1
+        self.registers[reg] = imm
+
     def step(self):
         opcode = self.memory.read_byte(self.pc)
         self.pc += 1
@@ -73,10 +78,10 @@ class CPU:
                 self.pc += 1
                 if not (ZERO_FLAG & self.registers["F"]):
                     self.pc += sign_convert(jmp)
-            case 0b00001110:  # LD C, IMM8
-                imm = self.memory.read_byte(self.pc)
-                self.pc += 1
-                self.registers["C"] = imm
+            case 0b00001110:
+                self._ld_reg_imm8("C")  # LD C, IMM8
+            case 0b00111110:
+                self._ld_reg_imm8("A")  # LD A, IMM8
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
