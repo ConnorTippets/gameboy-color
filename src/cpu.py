@@ -109,6 +109,11 @@ class CPU:
                 self.memory.write_byte(hl, self.registers["A"])
                 self.registers["L"] = hl & 0xFF
                 self.registers["H"] = (hl & 0xFF00) >> 8
+            case 0b11100000:  # LDH IMM8, A
+                self.memory.write_byte(
+                    0xFF00 | self.memory.read_byte(self.pc), self.registers["A"]
+                )
+                self.pc += 1
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
