@@ -257,8 +257,14 @@ class CPU:
         # placeholder, accurate timing will be stubbed in later
         while True:
             instr = self.memory.read_byte(self.pc)
+
+            if instr == 0b11110000 and self.memory.read_byte(self.pc + 1) == 0b01000100:
+                # screen refresh byte according to disassembly
+                self.memory.write_byte(0xFF44, 0x90)
+
             print(
                 hex(instr).upper()[2:], "0" * (8 - len(bin(instr)[2:])) + bin(instr)[2:]
             )
             self.step()
             print(self.registers, self.pc, self.sp)
+            self.memory.write_byte(0xFF44, 0x00)

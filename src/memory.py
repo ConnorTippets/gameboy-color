@@ -32,7 +32,6 @@ class Writeable:
     buf: bytearray
 
     def write_byte(self, addr: int, val: int):
-        print(self.__class__.__name__, addr, val)
         self.buf[addr] = val
 
     def write_word(self, addr: int, val: int):
@@ -101,25 +100,40 @@ class IO(Readable, Writeable, MemoryMapped):
         self.size = IO_SIZE
 
     def read_byte(self, addr: int) -> int:
-        if 0xFF10 <= addr and addr <= 0xFF26:
+        if 0x10 <= addr and addr <= 0x26:
+            return self.buf[addr]
+        elif 0x40 <= addr and addr <= 0x4B:
             return self.buf[addr]
         else:
+            print(f"WARNING: ATTEMPTING TO READ UNMAPPED IO: 0x{hex(addr).upper()[2:]}")
             return 0xFF
 
     def read_word(self, addr: int) -> int:
-        if 0xFF10 <= addr and addr <= 0xFF26:
+        if 0x10 <= addr and addr <= 0x26:
+            return (self.buf[addr + 1] << 8) | self.buf[addr]
+        elif 0x40 <= addr and addr <= 0x4B:
             return (self.buf[addr + 1] << 8) | self.buf[addr]
         else:
+            print(f"WARNING: ATTEMPTING TO READ UNMAPPED IO: 0x{hex(addr).upper()[2:]}")
             return 0xFFFF
 
     def write_byte(self, addr: int, val: int):
-        if 0xFF10 <= addr and addr <= 0xFF26:
+        if 0x10 <= addr and addr <= 0x26:
             self.buf[addr] = val
+        elif 0x40 <= addr and addr <= 0x4B:
+            self.buf[addr] = val
+        else:
+            print(f"WARNING: ATTEMPTING TO WRITE UNMAPPED IO 0x{hex(addr).upper()[2:]}")
 
     def write_word(self, addr: int, val: int):
-        if 0xFF10 <= addr and addr <= 0xFF26:
+        if 0x10 <= addr and addr <= 0x26:
             self.buf[addr] = val & 0xFF
             self.buf[addr + 1] = (val & 0xFF00) >> 8
+        elif 0x40 <= addr and addr <= 0x4B:
+            self.buf[addr] = val & 0xFF
+            self.buf[addr + 1] = (val & 0xFF00) >> 8
+        else:
+            print(f"WARNING: ATTEMPTING TO WRITE UNMAPPED IO 0x{hex(addr).upper()[2:]}")
 
 
 class Memory:
