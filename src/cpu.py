@@ -234,6 +234,8 @@ class CPU:
                 self._dec_reg("A")
             case 0b00101000:  # JR Z, IMM8
                 self._jr_cond_imm8(self.registers["F"] & ZERO_FLAG)
+            case 0b01100111:  # LD H, A
+                self.registers["H"] = self.registers["A"]
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
