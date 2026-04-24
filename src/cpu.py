@@ -254,6 +254,8 @@ class CPU:
                 self._dec_reg("E")
             case 0b00100100:  # INC H
                 self._inc_reg("H")
+            case 0b01111100:  # LD A, H
+                self.registers["A"] = self.registers["H"]
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
