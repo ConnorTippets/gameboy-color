@@ -119,6 +119,9 @@ class CPU:
                 self.pc += 1
             case 0b00010001:  # LD DE, IMM16
                 self._ld_reg16_imm16("D", "E")
+            case 0b00011010:  # LD A, [DE]
+                de = (self.registers["D"] << 8) | self.registers["E"]
+                self.registers["A"] = self.memory.read_word(de)
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
