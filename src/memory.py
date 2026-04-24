@@ -32,6 +32,7 @@ class Writeable:
     buf: bytearray
 
     def write_byte(self, addr: int, val: int):
+        print(self.__class__.__name__, addr, val)
         self.buf[addr] = val
 
     def write_word(self, addr: int, val: int):

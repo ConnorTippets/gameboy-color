@@ -153,7 +153,7 @@ class CPU:
             case 0b00010001:  # LD DE, IMM16
                 self._ld_reg16_imm16("D", "E")
             case 0b00011010:  # LD A, [DE]
-                self.registers["A"] = self.memory.read_word(self._get_reg16("D", "E"))
+                self.registers["A"] = self.memory.read_byte(self._get_reg16("D", "E"))
             case 0b11001101:  # CALL IMM16
                 addr = self.memory.read_word(self.pc)
                 self.pc += 2
@@ -201,6 +201,28 @@ class CPU:
                 self._inc_reg16("D", "E")
             case 0b01111011:  # LD A, E
                 self.registers["A"] = self.registers["E"]
+            case 0b11111110:  # CP IMM8
+                value = self.memory.read_byte(self.pc)
+                result = value - self.registers["A"]
+                self.pc += 1
+
+                self.registers["F"] |= SUB_FLAG
+
+                if result == 0:
+                    self.registers["F"] |= ZERO_FLAG
+                else:
+                    self.registers["F"] &= ~ZERO_FLAG
+
+                if value > self.registers["A"]:
+                    self.registers["F"] |= CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~CARRY_FLAG
+
+                if (self.registers["A"] & 0xF) < (value & 0xF):
+                    self.registers["F"] |= HALF_CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~HALF_CARRY_FLAG
+
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
