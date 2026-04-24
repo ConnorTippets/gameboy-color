@@ -8,6 +8,9 @@ DEFAULT_ROM_START = 0x0100
 ECHO_START = 0xE000
 ECHO_END = 0xFDFF
 
+VRAM_SIZE = 8 * 1024
+DEFAULT_VRAM_START = 0x8000
+
 
 class Readable:
     buf: bytearray
@@ -42,6 +45,13 @@ class WRAM(Readable, Writeable, MemoryMapped):
         self.size = WRAM_SIZE
 
 
+class VRAM(Readable, Writeable, MemoryMapped):
+    def __init__(self):
+        self.buf = bytearray(VRAM_SIZE)
+        self.start = DEFAULT_VRAM_START
+        self.size = VRAM_SIZE
+
+
 class ROM(Readable, MemoryMapped):
     def __init__(self):
         self.buf = bytearray(ROM_SIZE)
@@ -71,6 +81,7 @@ class Memory:
         self.boot_rom = BootROM()
         self.rom = ROM()
         self.wram = WRAM()
+        self.vram = VRAM()
 
     def read_byte(self, addr: int) -> int:
         if 0x0000 <= addr < 0x0100:
@@ -81,6 +92,8 @@ class Memory:
             return self.wram.read_byte(addr - self.wram.start)
         elif ECHO_START <= addr and addr < ECHO_END:
             return self.wram.read_byte(addr - ECHO_START)
+        elif self.vram.start <= addr and addr < self.vram.end:
+            return self.vram.read_byte(addr - self.vram.start)
         else:
             raise Exception(f"Invalid mem read: {hex(addr).upper()[2:]}")
 
@@ -93,6 +106,8 @@ class Memory:
             return self.wram.read_word(addr - self.wram.start)
         elif ECHO_START <= addr and addr < ECHO_END:
             return self.wram.read_word(addr - ECHO_START)
+        elif self.vram.start <= addr and addr < self.vram.end:
+            return self.vram.read_word(addr - self.vram.start)
         else:
             raise Exception(f"Invalid mem read: {hex(addr).upper()[2:]}")
 
@@ -105,6 +120,8 @@ class Memory:
             return self.wram.write_byte(addr - self.wram.start, val)
         elif ECHO_START <= addr and addr < ECHO_END:
             return self.wram.write_byte(addr - ECHO_START, val)
+        elif self.vram.start <= addr and addr < self.vram.end:
+            return self.vram.write_byte(addr - self.vram.start, val)
         else:
             raise Exception(f"Invalid mem write: {hex(addr).upper()[2:]}")
 
