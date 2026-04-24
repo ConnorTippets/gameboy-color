@@ -256,6 +256,27 @@ class CPU:
                 self._inc_reg("H")
             case 0b01111100:  # LD A, H
                 self.registers["A"] = self.registers["H"]
+            case 0b10010000:  # SUB A, B
+                reg = self.registers["A"]
+                value = self.registers["B"]
+                self.registers["A"] = reg - value
+
+                self.registers["F"] |= SUB_FLAG
+
+                if self.registers["A"] == 0:
+                    self.registers["F"] |= ZERO_FLAG
+                else:
+                    self.registers["F"] &= ~ZERO_FLAG
+
+                if reg < value:
+                    self.registers["F"] |= CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~CARRY_FLAG
+
+                if ((reg & 0xF) - (value & 0xF)) < 0:
+                    self.registers["F"] |= HALF_CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~HALF_CARRY_FLAG
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
