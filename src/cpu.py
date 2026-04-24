@@ -23,8 +23,6 @@ class CPU:
             "L": 0x00,
         }
 
-        self.word_regs = ["AF", "BC", "DE", "HL", "SP", "PC"]
-
     def cb_step(self):
         opcode = self.memory.read_byte(self.pc)
         self.pc += 1
