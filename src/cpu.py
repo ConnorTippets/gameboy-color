@@ -149,6 +149,20 @@ class CPU:
             case 0b11000101:  # PUSH BC
                 self.sp -= 2
                 self.memory.write_word(self.sp, self._get_reg16("B", "C"))
+            case 0b00010111:  # RLA
+                val = self.registers["A"] << 1
+                lsb = (val & 0xFF) | ((self.registers["F"] & CARRY_FLAG) >> 4)
+
+                if (val & 0xFF00) >> 8:
+                    self.registers["F"] |= CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~CARRY_FLAG
+
+                self.registers["F"] &= ~SUB_FLAG
+                self.registers["F"] &= ~HALF_CARRY_FLAG
+                self.registers["F"] |= ZERO_FLAG
+
+                self.registers["A"] = lsb
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
