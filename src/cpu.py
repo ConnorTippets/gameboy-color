@@ -197,6 +197,8 @@ class CPU:
                 addr = self.memory.read_word(self.sp)
                 self.sp += 2
                 self.pc = addr
+            case 0b00010011:  # INC DE
+                self._inc_reg16("D", "E")
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
