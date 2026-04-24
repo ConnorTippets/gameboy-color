@@ -248,6 +248,8 @@ class CPU:
                     0xFF00 | self.memory.read_byte(self.pc)
                 )
                 self.pc += 1
+            case 0b00001101:  # DEC C
+                self._dec_reg("C")
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
