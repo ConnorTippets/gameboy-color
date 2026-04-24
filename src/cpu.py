@@ -69,6 +69,9 @@ class CPU:
 
         self.registers[reg] = result
 
+    def _get_reg16(self, reg_high: str, reg_low: str) -> int:
+        return (self.registers[reg_high] << 8) | self.registers[reg_low]
+
     def step(self):
         opcode = self.memory.read_byte(self.pc)
         self.pc += 1
@@ -85,7 +88,7 @@ class CPU:
             case 0b00100001:  # LD HL, IMM16
                 self._ld_reg16_imm16("H", "L")
             case 0b00110010:  # LD HL-, A
-                hl = (self.registers["H"] << 8) | self.registers["L"]
+                hl = self._get_reg16("H", "L")
                 self.memory.write_byte(hl, self.registers["A"])
                 hl -= 1
                 self.registers["L"] = hl & 0xFF
@@ -108,7 +111,7 @@ class CPU:
             case 0b00001100:  # INC C
                 self._inc_reg("C")
             case 0b01110111:  # LD HL, A
-                hl = (self.registers["H"] << 8) | self.registers["L"]
+                hl = self._get_reg16("H", "L")
                 self.memory.write_byte(hl, self.registers["A"])
                 self.registers["L"] = hl & 0xFF
                 self.registers["H"] = (hl & 0xFF00) >> 8
@@ -120,18 +123,20 @@ class CPU:
             case 0b00010001:  # LD DE, IMM16
                 self._ld_reg16_imm16("D", "E")
             case 0b00011010:  # LD A, [DE]
-                de = (self.registers["D"] << 8) | self.registers["E"]
-                self.registers["A"] = self.memory.read_word(de)
+                self.registers["A"] = self.memory.read_word(self._get_reg16("D", "E"))
             case 0b11001101:  # CALL IMM16
                 addr = self.memory.read_word(self.pc)
                 self.pc += 2
-                self.sp -= 1
-                self.memory.write_word(self.sp - 1, self.pc)
+                self.sp -= 2
+                self.memory.write_word(self.sp, self.pc)
                 self.pc = addr
             case 0b01001111:  # LD C, A
                 self.registers["C"] = self.registers["A"]
             case 0b00000110:  # LD B, IMM8
                 self._ld_reg_imm8("B")
+            case 0b11000101:  # PUSH BC
+                self.sp -= 2
+                self.memory.write_word(self.sp, self._get_reg16("B", "C"))
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
