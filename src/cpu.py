@@ -236,6 +236,13 @@ class CPU:
                 self._jr_cond_imm8(self.registers["F"] & ZERO_FLAG)
             case 0b01100111:  # LD H, A
                 self.registers["H"] = self.registers["A"]
+            case 0b01010111:  # LD D, A
+                self.registers["D"] = self.registers["A"]
+            case 0b00000100:  # INC B
+                self._inc_reg("B")
+            case 0b00011110:  # LD E, IMM8
+                self.registers["E"] = self.memory.read_byte(self.pc)
+                self.pc += 1
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
