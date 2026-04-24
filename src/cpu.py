@@ -222,7 +222,11 @@ class CPU:
                     self.registers["F"] |= HALF_CARRY_FLAG
                 else:
                     self.registers["F"] &= ~HALF_CARRY_FLAG
-
+            case 0b11101010:  # LD IMM16, A
+                self.memory.write_byte(
+                    self.memory.read_word(self.pc), self.registers["A"]
+                )
+                self.pc += 2
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
