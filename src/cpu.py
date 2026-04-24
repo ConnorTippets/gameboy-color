@@ -51,6 +51,12 @@ class CPU:
         self.pc += 1
         self.registers[reg] = imm
 
+    def _ld_reg16_imm16(self, reg_high: str, reg_low: str):
+        imm = self.memory.read_word(self.pc)
+        self.pc += 2
+        self.registers[reg_low] = imm & 0xFF
+        self.registers[reg_high] = (imm & 0xFF00) >> 8
+
     def _inc_reg(self, reg: str):
         result = (self.registers[reg] + 1) & 0xFF
         self.registers["F"] &= ~SUB_FLAG
@@ -77,10 +83,7 @@ class CPU:
             case 0b10101111:  # XOR A
                 self.registers["A"] = 0x00
             case 0b00100001:  # LD HL, IMM16
-                imm = self.memory.read_word(self.pc)
-                self.pc += 2
-                self.registers["L"] = imm & 0xFF
-                self.registers["H"] = (imm & 0xFF00) >> 8
+                self._ld_reg16_imm16("H", "L")
             case 0b00110010:  # LD HL-, A
                 hl = (self.registers["H"] << 8) | self.registers["L"]
                 self.memory.write_byte(hl, self.registers["A"])
@@ -114,6 +117,8 @@ class CPU:
                     0xFF00 | self.memory.read_byte(self.pc), self.registers["A"]
                 )
                 self.pc += 1
+            case 0b00010001:  # LD DE, IMM16
+                self._ld_reg16_imm16("D", "E")
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
