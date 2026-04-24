@@ -199,6 +199,8 @@ class CPU:
                 self.pc = addr
             case 0b00010011:  # INC DE
                 self._inc_reg16("D", "E")
+            case 0b01111011:  # LD A, E
+                self.registers["A"] = self.registers["E"]
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
