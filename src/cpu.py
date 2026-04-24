@@ -84,6 +84,10 @@ class CPU:
     def _get_reg16(self, reg_high: str, reg_low: str) -> int:
         return (self.registers[reg_high] << 8) | self.registers[reg_low]
 
+    def _set_reg16(self, reg_high: str, reg_low: str, val: int):
+        self.registers[reg_high] = (val & 0xFF00) >> 8
+        self.registers[reg_low] = val & 0xFF
+
     def step(self):
         opcode = self.memory.read_byte(self.pc)
         self.pc += 1
@@ -163,6 +167,9 @@ class CPU:
                 self.registers["F"] |= ZERO_FLAG
 
                 self.registers["A"] = lsb
+            case 0b11000001:  # POP BC
+                self._set_reg16("B", "C", self.memory.read_word(self.sp))
+                self.sp += 2
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
