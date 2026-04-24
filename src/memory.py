@@ -11,6 +11,9 @@ ECHO_END = 0xFDFF
 VRAM_SIZE = 8 * 1024
 DEFAULT_VRAM_START = 0x8000
 
+HRAM_SIZE = 127
+DEFAULT_HRAM_START = 0xFF80
+
 IO_SIZE = 127
 DEFAULT_IO_START = 0xFF00
 
@@ -30,6 +33,10 @@ class Writeable:
 
     def write_byte(self, addr: int, val: int):
         self.buf[addr] = val
+
+    def write_word(self, addr: int, val: int):
+        self.buf[addr] = val & 0xFF
+        self.buf[addr + 1] = (val & 0xFF00) >> 8
 
 
 class MemoryMapped:
@@ -53,6 +60,13 @@ class VRAM(Readable, Writeable, MemoryMapped):
         self.buf = bytearray(VRAM_SIZE)
         self.start = DEFAULT_VRAM_START
         self.size = VRAM_SIZE
+
+
+class HRAM(Readable, Writeable, MemoryMapped):
+    def __init__(self):
+        self.buf = bytearray(HRAM_SIZE)
+        self.start = DEFAULT_HRAM_START
+        self.size = HRAM_SIZE
 
 
 class ROM(Readable, MemoryMapped):
@@ -101,6 +115,11 @@ class IO(Readable, Writeable, MemoryMapped):
         if 0xFF10 <= addr and addr <= 0xFF26:
             self.buf[addr] = val
 
+    def write_word(self, addr: int, val: int):
+        if 0xFF10 <= addr and addr <= 0xFF26:
+            self.buf[addr] = val & 0xFF
+            self.buf[addr + 1] = (val & 0xFF00) >> 8
+
 
 class Memory:
     def __init__(self):
@@ -108,6 +127,7 @@ class Memory:
         self.rom = ROM()
         self.wram = WRAM()
         self.vram = VRAM()
+        self.hram = HRAM()
         self.io = IO()
 
     def read_byte(self, addr: int) -> int:
@@ -121,6 +141,8 @@ class Memory:
             return self.wram.read_byte(addr - ECHO_START)
         elif self.vram.start <= addr and addr < self.vram.end:
             return self.vram.read_byte(addr - self.vram.start)
+        elif self.hram.start <= addr and addr < self.hram.end:
+            return self.hram.read_byte(addr - self.hram.start)
         elif self.io.start <= addr and addr < self.io.end:
             return self.io.read_byte(addr - self.io.start)
         else:
@@ -137,6 +159,8 @@ class Memory:
             return self.wram.read_word(addr - ECHO_START)
         elif self.vram.start <= addr and addr < self.vram.end:
             return self.vram.read_word(addr - self.vram.start)
+        elif self.hram.start <= addr and addr < self.hram.end:
+            return self.hram.read_word(addr - self.hram.start)
         elif self.io.start <= addr and addr < self.io.end:
             return self.io.read_word(addr - self.io.start)
         else:
@@ -153,8 +177,28 @@ class Memory:
             return self.wram.write_byte(addr - ECHO_START, val)
         elif self.vram.start <= addr and addr < self.vram.end:
             return self.vram.write_byte(addr - self.vram.start, val)
+        elif self.hram.start <= addr and addr < self.hram.end:
+            return self.hram.write_byte(addr - self.hram.start, val)
         elif self.io.start <= addr and addr < self.io.end:
             return self.io.write_byte(addr - self.io.start, val)
+        else:
+            raise Exception(f"Invalid mem write: {hex(addr).upper()[2:]}")
+
+    def write_word(self, addr: int, val: int):
+        if self.rom.start - 0x0100 <= addr and addr < self.rom.end:
+            raise Exception(
+                f"Attempted to write to address in ROM space! Absolute: {hex(addr).upper()[2:]}; Relative: {hex(addr - self.rom.start).upper()[2:]}"
+            )
+        elif self.wram.start <= addr and addr < self.wram.end:
+            return self.wram.write_word(addr - self.wram.start, val)
+        elif ECHO_START <= addr and addr < ECHO_END:
+            return self.wram.write_word(addr - ECHO_START, val)
+        elif self.vram.start <= addr and addr < self.vram.end:
+            return self.vram.write_word(addr - self.vram.start, val)
+        elif self.hram.start <= addr and addr < self.hram.end:
+            return self.hram.write_word(addr - self.hram.start, val)
+        elif self.io.start <= addr and addr < self.io.end:
+            return self.io.write_word(addr - self.io.start, val)
         else:
             raise Exception(f"Invalid mem write: {hex(addr).upper()[2:]}")
 
