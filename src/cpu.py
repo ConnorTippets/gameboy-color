@@ -1,5 +1,7 @@
 from .memory import Memory
 
+ZERO_FLAG = 0b10000000
+
 
 class CPU:
     def __init__(self, memory: Memory):
@@ -19,6 +21,26 @@ class CPU:
 
         self.word_regs = ["AF", "BC", "DE", "HL", "SP", "PC"]
 
+    def cb_step(self):
+        opcode = self.memory.read_byte(self.pc)
+        self.pc += 1
+
+        match opcode:
+            case 0b01111100:  # BIT 7, H
+                # print(
+                #     "hi",
+                #     self.registers["H"],
+                #     "0" * (8 - len(bin(self.registers["H"])[2:]))
+                #     + bin(self.registers["H"])[2:],
+                #     "0" * (8 - len(bin(1 << 7)[2:])) + bin(1 << 7)[2:],
+                # )
+                if not ((1 << 7) & self.registers["H"]):
+                    self.registers["F"] |= ZERO_FLAG
+            case _:
+                raise Exception(
+                    f"Unknown 0xCB instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
+                )
+
     def step(self):
         opcode = self.memory.read_byte(self.pc)
         self.pc += 1
@@ -30,22 +52,21 @@ class CPU:
                 imm = self.memory.read_word(self.pc)
                 self.pc += 2
                 self.sp = imm
-                return
             case 0b10101111:  # XOR A
                 self.registers["A"] = 0x00
-                return
             case 0b00100001:  # LD HL, IMM16
                 imm = self.memory.read_word(self.pc)
                 self.pc += 2
                 self.registers["L"] = imm & 0xFF
                 self.registers["H"] = (imm & 0xFF00) >> 8
-                return
             case 0b00110010:  # LD HL-, A
                 hl = (self.registers["H"] << 8) | self.registers["L"]
                 self.memory.write_byte(hl, self.registers["A"])
                 hl -= 1
                 self.registers["L"] = hl & 0xFF
                 self.registers["H"] = (hl & 0xFF00) >> 8
+            case 0b11001011:  # 0xCB: Read next byte for opcode
+                self.cb_step()
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
