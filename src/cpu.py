@@ -128,6 +128,8 @@ class CPU:
                 self.sp -= 1
                 self.memory.write_word(self.sp - 1, self.pc)
                 self.pc = addr
+            case 0b01001111:  # LD C, A
+                self.registers["C"] = self.registers["A"]
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
