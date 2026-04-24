@@ -282,6 +282,8 @@ class CPU:
             case 0b00010110:  # LD D, IMM8
                 self.registers["D"] = self.memory.read_byte(self.pc)
                 self.pc += 1
+            case 0b00011000:  # JR IMM8
+                self.pc += 1 + sign_convert(self.memory.read_byte(self.pc))
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
