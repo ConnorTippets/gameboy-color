@@ -320,6 +320,8 @@ class CPU:
                     self.registers["F"] |= HALF_CARRY_FLAG
                 else:
                     self.registers["F"] &= ~HALF_CARRY_FLAG
+            case 0b01111101:  # LD A, L
+                self.registers["A"] = self.registers["L"]
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
@@ -334,9 +336,9 @@ class CPU:
                 # screen refresh byte according to disassembly
                 self.memory.write_byte(0xFF44, 0x90)
 
-            print(
-                hex(instr).upper()[2:], "0" * (8 - len(bin(instr)[2:])) + bin(instr)[2:]
-            )
+            # print(
+            #     hex(instr).upper()[2:], "0" * (8 - len(bin(instr)[2:])) + bin(instr)[2:]
+            # )
             self.step()
-            print(self.registers, self.pc, self.sp)
+            # print(self.registers, self.pc, self.sp)
             self.memory.write_byte(0xFF44, 0x00)
