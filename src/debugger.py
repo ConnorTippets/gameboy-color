@@ -121,7 +121,15 @@ class Debugger(CPU):
                 return "Unknown instruction!"
 
     def run(self):
+        count = -1
         while True:
+            if count > 0:
+                self.step()
+                count -= 1
+                continue
+            else:
+                count = -1
+
             cmd = input("gdb> ").strip()
             if cmd.upper() in REGS:
                 hex_repr = hex(self.registers[cmd.upper()]).upper()[2:]
@@ -173,6 +181,12 @@ class Debugger(CPU):
                 hex_addr = hex(addr).upper()[2:]
 
                 print(f"0x{hex_addr}: 0x{hex_repr} (0b{padded_bin_repr})")
+                continue
+
+            if cmd.lower().startswith("step ") and cmd.lower().endswith(" times"):
+                count = int(
+                    cmd.lower().replace("step ", "").replace(" times", "").strip()
+                )
                 continue
 
             match cmd.lower():
