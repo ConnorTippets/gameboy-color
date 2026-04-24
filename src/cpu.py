@@ -1,4 +1,5 @@
 from .memory import Memory
+from .util import sign_convert
 
 ZERO_FLAG = 0b10000000
 
@@ -67,6 +68,11 @@ class CPU:
                 self.registers["H"] = (hl & 0xFF00) >> 8
             case 0b11001011:  # 0xCB: Read next byte for opcode
                 self.cb_step()
+            case 0b00100000:  # JR NZ, IMM8
+                jmp = self.memory.read_byte(self.pc)
+                self.pc += 1
+                if not (ZERO_FLAG & self.registers["F"]):
+                    self.pc += sign_convert(jmp)
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
