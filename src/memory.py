@@ -102,6 +102,7 @@ class BootROM(Readable):
 class IO(Readable, Writeable, MemoryMapped):
     def __init__(self):
         self.buf = bytearray(IO_SIZE)
+        self.buf[0x44] = 0x90
         self.start = DEFAULT_IO_START
         self.size = IO_SIZE
 
