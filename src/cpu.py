@@ -323,6 +323,28 @@ class CPU:
                 self.registers["A"] = self.registers["L"]
             case 0b01111000:  # LD A, B
                 self.registers["A"] = self.registers["B"]
+            case 0b10000110:  # ADD A, [HL]
+                value = self.memory.read_byte(self._get_reg16("H", "L"))
+                reg = self.registers["A"]
+                result = (value + reg) & 0xFF
+                self.registers["A"] = result
+
+                self.registers["F"] &= ~SUB_FLAG
+
+                if result == 0:
+                    self.registers["F"] |= ZERO_FLAG
+                else:
+                    self.registers["F"] &= ~ZERO_FLAG
+
+                if result & 0xFF00 != 0:
+                    self.registers["F"] |= CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~CARRY_FLAG
+
+                if (reg & 0xF) + (value & 0xF) > 0xF:
+                    self.registers["F"] |= HALF_CARRY_FLAG
+                else:
+                    self.registers["F"] &= ~HALF_CARRY_FLAG
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
