@@ -9,6 +9,7 @@ from src import Memory
 
 mem = Memory()
 mem.load_boot_rom("test/dmg_boot.bin")
+mem.load_game_rom("test/game.bin")
 
 debug = Debugger(mem)
 debug.run()

@@ -302,7 +302,6 @@ class CPU:
             case 0b10111110:  # CP [HL]
                 value = self.memory.read_byte(self._get_reg16("H", "L"))
                 result = value - self.registers["A"]
-                self.pc += 1
 
                 self.registers["F"] |= SUB_FLAG
 

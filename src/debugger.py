@@ -589,7 +589,16 @@ class Debugger(CPU):
         count = -1
         run_forever = False
         run_until_unknown = False
+        run_until_pc = -1
         while True:
+            if run_until_pc > -1:
+                if self.pc == run_until_pc:
+                    run_until_pc = -1
+                    continue
+
+                self.step()
+                continue
+
             if run_until_unknown:
                 disasm = self.disasm()
                 if disasm.startswith("Unknown "):
@@ -702,6 +711,19 @@ class Debugger(CPU):
                 hex_addr = hex(addr).upper()[2:]
 
                 print(f"0x{hex_addr}: 0x{hex_repr} (0b{padded_bin_repr})")
+                continue
+
+            if cmd.lower().startswith("run until pc ="):
+                operand = cmd.lower().replace("run until pc =", "").strip()
+
+                addr: int = 0
+                try:
+                    addr = int(operand, 16)
+                except ValueError:
+                    print(f"Unknown address format: {operand}")
+                    continue
+
+                run_until_pc = addr
                 continue
 
             if cmd.lower().startswith("step ") and cmd.lower().endswith(" times"):

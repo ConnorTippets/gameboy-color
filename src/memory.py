@@ -2,8 +2,8 @@
 WRAM_SIZE = 8 * 1024
 DEFAULT_WRAM_START = 0xC000
 
-ROM_SIZE = 32 * 1024 - 0x0100
-DEFAULT_ROM_START = 0x0100
+ROM_SIZE = 32 * 1024
+DEFAULT_ROM_START = 0x0000
 
 ECHO_START = 0xE000
 ECHO_END = 0xFE00
@@ -160,6 +160,7 @@ class OAM(Readable, Writeable, MemoryMapped):
 class Memory:
     def __init__(self):
         self.boot_rom = BootROM()
+        self.boot_rom_enabled = True
         self.rom = ROM()
         self.wram = WRAM()
         self.vram = VRAM()
@@ -167,9 +168,10 @@ class Memory:
         self.eram = ERAM()
         self.oam = OAM()
         self.io = IO()
+        self.game_rom = bytearray()
 
     def read_byte(self, addr: int) -> int:
-        if 0x0000 <= addr < 0x0100:
+        if 0x0000 <= addr < 0x0100 and self.boot_rom_enabled:
             return self.boot_rom.read_byte(addr)
         if self.rom.start <= addr and addr < self.rom.end:
             return self.rom.read_byte(addr - self.rom.start)
@@ -193,7 +195,7 @@ class Memory:
             raise Exception(f"Invalid mem read: {hex(addr).upper()[2:]}")
 
     def read_word(self, addr: int) -> int:
-        if 0x0000 <= addr < 0x0100:
+        if 0x0000 <= addr < 0x0100 and self.boot_rom_enabled:
             return self.boot_rom.read_word(addr)
         if self.rom.start <= addr and addr < self.rom.end:
             return self.rom.read_word(addr - self.rom.start)
@@ -217,7 +219,7 @@ class Memory:
             raise Exception(f"Invalid mem read: {hex(addr).upper()[2:]}")
 
     def write_byte(self, addr: int, val: int):
-        if self.rom.start - 0x0100 <= addr and addr < self.rom.end:
+        if self.rom.start <= addr and addr < self.rom.end:
             raise Exception(
                 f"Attempted to write to address in ROM space! Absolute: {hex(addr).upper()[2:]}; Relative: {hex(addr - self.rom.start).upper()[2:]}"
             )
@@ -239,7 +241,7 @@ class Memory:
             raise Exception(f"Invalid mem write: {hex(addr).upper()[2:]}")
 
     def write_word(self, addr: int, val: int):
-        if self.rom.start - 0x0100 <= addr and addr < self.rom.end:
+        if self.rom.start <= addr and addr < self.rom.end:
             raise Exception(
                 f"Attempted to write to address in ROM space! Absolute: {hex(addr).upper()[2:]}; Relative: {hex(addr - self.rom.start).upper()[2:]}"
             )
@@ -267,3 +269,11 @@ class Memory:
 
         # evil! >:)
         self.boot_rom.buf = buf[0x0000:0x0100]
+
+    def load_game_rom(self, path: str):
+        buf = bytearray()
+        with open(path, "rb") as handle:
+            buf = bytearray(handle.read())
+
+        # evil! >:)
+        self.rom.buf[: len(buf)] = buf
