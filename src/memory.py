@@ -6,7 +6,7 @@ ROM_SIZE = 32 * 1024 - 0x0100
 DEFAULT_ROM_START = 0x0100
 
 ECHO_START = 0xE000
-ECHO_END = 0xFDFF
+ECHO_END = 0xFE00
 
 VRAM_SIZE = 8 * 1024
 DEFAULT_VRAM_START = 0x8000
@@ -16,6 +16,12 @@ DEFAULT_HRAM_START = 0xFF80
 
 IO_SIZE = 127
 DEFAULT_IO_START = 0xFF00
+
+ERAM_SIZE = 8 * 1024
+DEFAULT_ERAM_START = 0xA000
+
+OAM_SIZE = 0xA0
+DEFAULT_OAM_START = 0xFE00
 
 
 class Readable:
@@ -136,6 +142,20 @@ class IO(Readable, Writeable, MemoryMapped):
             print(f"WARNING: ATTEMPTING TO WRITE UNMAPPED IO 0x{hex(addr).upper()[2:]}")
 
 
+class ERAM(Readable, Writeable, MemoryMapped):
+    def __init__(self):
+        self.buf = bytearray(ERAM_SIZE)
+        self.start = DEFAULT_ERAM_START
+        self.size = ERAM_SIZE
+
+
+class OAM(Readable, Writeable, MemoryMapped):
+    def __init__(self):
+        self.buf = bytearray(OAM_SIZE)
+        self.start = DEFAULT_OAM_START
+        self.size = OAM_SIZE
+
+
 class Memory:
     def __init__(self):
         self.boot_rom = BootROM()
@@ -143,6 +163,8 @@ class Memory:
         self.wram = WRAM()
         self.vram = VRAM()
         self.hram = HRAM()
+        self.eram = ERAM()
+        self.oam = OAM()
         self.io = IO()
 
     def read_byte(self, addr: int) -> int:
@@ -158,6 +180,10 @@ class Memory:
             return self.vram.read_byte(addr - self.vram.start)
         elif self.hram.start <= addr and addr < self.hram.end:
             return self.hram.read_byte(addr - self.hram.start)
+        elif self.eram.start <= addr and addr < self.eram.end:
+            return self.eram.read_byte(addr - self.eram.start)
+        elif self.oam.start <= addr and addr < self.oam.end:
+            return self.oam.read_byte(addr - self.oam.start)
         elif self.io.start <= addr and addr < self.io.end:
             return self.io.read_byte(addr - self.io.start)
         else:
@@ -176,6 +202,10 @@ class Memory:
             return self.vram.read_word(addr - self.vram.start)
         elif self.hram.start <= addr and addr < self.hram.end:
             return self.hram.read_word(addr - self.hram.start)
+        elif self.eram.start <= addr and addr < self.eram.end:
+            return self.eram.read_word(addr - self.eram.start)
+        elif self.oam.start <= addr and addr < self.oam.end:
+            return self.oam.read_word(addr - self.oam.start)
         elif self.io.start <= addr and addr < self.io.end:
             return self.io.read_word(addr - self.io.start)
         else:
@@ -194,6 +224,10 @@ class Memory:
             return self.vram.write_byte(addr - self.vram.start, val)
         elif self.hram.start <= addr and addr < self.hram.end:
             return self.hram.write_byte(addr - self.hram.start, val)
+        elif self.eram.start <= addr and addr < self.eram.end:
+            return self.eram.write_byte(addr - self.eram.start, val)
+        elif self.oam.start <= addr and addr < self.oam.end:
+            return self.oam.write_byte(addr - self.oam.start, val)
         elif self.io.start <= addr and addr < self.io.end:
             return self.io.write_byte(addr - self.io.start, val)
         else:
@@ -212,6 +246,10 @@ class Memory:
             return self.vram.write_word(addr - self.vram.start, val)
         elif self.hram.start <= addr and addr < self.hram.end:
             return self.hram.write_word(addr - self.hram.start, val)
+        elif self.eram.start <= addr and addr < self.eram.end:
+            return self.eram.write_word(addr - self.eram.start, val)
+        elif self.oam.start <= addr and addr < self.oam.end:
+            return self.oam.write_word(addr - self.oam.start, val)
         elif self.io.start <= addr and addr < self.io.end:
             return self.io.write_word(addr - self.io.start, val)
         else:
