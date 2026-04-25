@@ -85,15 +85,13 @@ class Debugger(CPU):
                 return "CCF"
             case 0x18:
                 imm8 = self.memory.read_byte(self.pc + 1)
-                imm8_hex = hex(imm8).upper()[2:]
 
-                return f"JR 0x{imm8_hex}"
+                return f"JR {sign_convert(imm8)}"
             case 0x20 | 0x28 | 0x30 | 0x38:
                 cond = COND[(instr & 0b00011000) >> 3]
                 imm8 = self.memory.read_byte(self.pc + 1)
-                imm8_hex = hex(imm8).upper()[2:]
 
-                return f"JR {cond} 0x{imm8_hex}"
+                return f"JR {cond}, {sign_convert(imm8)}"
             case 0x10:
                 return "STOP"
             case (
