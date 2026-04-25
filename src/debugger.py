@@ -7,7 +7,7 @@ R16STK = ["BC", "DE", "HL", "AF"]
 R16MEM = ["BC", "DE", "HL+", "HL-"]
 COND = ["NZ", "Z", "NC", "C"]
 
-REGS = ["A", "B", "C", "D", "E", "H", "L"]
+REGS = ["A", "F", "B", "C", "D", "E", "H", "L"]
 WORD_REGS = ["AF", "BC", "DE", "HL"]
 
 
@@ -646,6 +646,18 @@ class Debugger(CPU):
                 padded_bin_repr = "0" * (8 - len(bin_repr)) + bin_repr
 
                 print(f"{cmd.upper()}: 0x{hex_repr} (0b{padded_bin_repr})")
+
+                if cmd.upper() == "F":
+                    z = self.registers["F"] & 0b10000000
+                    n = self.registers["F"] & 0b01000000
+                    h = self.registers["F"] & 0b00100000
+                    c = self.registers["F"] & 0b00010000
+
+                    print()
+                    print(f"ZERO FLAG: {"TRUE" if z else "FALSE"}")
+                    print(f"SUBTRACTION FLAG: {"TRUE" if n else "FALSE"}")
+                    print(f"HALF CARRY FLAG: {"TRUE" if h else "FALSE"}")
+                    print(f"CARRY FLAG: {"TRUE" if c else "FALSE"}")
                 continue
 
             if cmd.upper() in WORD_REGS:
