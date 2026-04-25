@@ -11,10 +11,10 @@ ECHO_END = 0xFE00
 VRAM_SIZE = 8 * 1024
 DEFAULT_VRAM_START = 0x8000
 
-HRAM_SIZE = 127
+HRAM_SIZE = 128
 DEFAULT_HRAM_START = 0xFF80
 
-IO_SIZE = 127
+IO_SIZE = 128
 DEFAULT_IO_START = 0xFF00
 
 ERAM_SIZE = 8 * 1024
@@ -185,6 +185,8 @@ class Memory:
             return self.eram.read_byte(addr - self.eram.start)
         elif self.oam.start <= addr and addr < self.oam.end:
             return self.oam.read_byte(addr - self.oam.start)
+        elif 0xFEA0 <= addr and addr < 0xFF00:
+            return 0x00
         elif self.io.start <= addr and addr < self.io.end:
             return self.io.read_byte(addr - self.io.start)
         else:
@@ -207,6 +209,8 @@ class Memory:
             return self.eram.read_word(addr - self.eram.start)
         elif self.oam.start <= addr and addr < self.oam.end:
             return self.oam.read_word(addr - self.oam.start)
+        elif 0xFEA0 <= addr and addr < 0xFF00:
+            return 0x00
         elif self.io.start <= addr and addr < self.io.end:
             return self.io.read_word(addr - self.io.start)
         else:
