@@ -321,6 +321,8 @@ class CPU:
                     self.registers["F"] &= ~HALF_CARRY_FLAG
             case 0b01111101:  # LD A, L
                 self.registers["A"] = self.registers["L"]
+            case 0b01111000:  # LD A, B
+                self.registers["A"] = self.registers["B"]
             case _:
                 raise Exception(
                     f"Unknown instruction opcode: {"0"*(8-len(bin(opcode)[2:]))+bin(opcode)[2:]}"
