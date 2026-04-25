@@ -16,57 +16,86 @@ class Debugger(CPU):
         instr = self.memory.read_byte(self.pc)
 
         match instr:
-            case 0x00:
+            case 0x0:
                 return "NOP"
-            case 0x01 | 0x11 | 0x21 | 0x31:
-                dest = R16[(instr & 0b00110000) >> 4]
-                source = (
-                    self.memory.read_byte(self.pc + 2) << 8
-                ) | self.memory.read_byte(self.pc + 1)
-                source_hex = hex(source).upper()[2:]
+            case 0x1 | 0x11 | 0x21 | 0x31:
+                r16 = R16[(instr & 0b00110000) >> 4]
+                imm16 = (
+                    self.memory.read_byte(self.pc + 2)
+                ) << 8 | self.memory.read_byte(self.pc + 1)
+                imm16_hex = hex(imm16).upper()[2:]
 
-                return f"LD {dest}, 0x{source_hex}"
-            case 0xA8 | 0xA9 | 0xAA | 0xAB | 0xAC | 0xAD | 0xAE | 0xAF:
-                operand = R8[instr & 0b00000111]
+                return f"LD {r16}, 0x{imm16_hex}"
+            case 0x2 | 0x12 | 0x22 | 0x32:
+                r16mem = R16MEM[(instr & 0b00110000) >> 4]
 
-                return f"XOR A, {operand}"
-            case 0x02 | 0x12 | 0x22 | 0x32:
-                dest = R16MEM[(instr & 0b00110000) >> 4]
+                return f"LD [{r16mem}], A"
+            case 0xA | 0x1A | 0x2A | 0x3A:
+                r16mem = R16MEM[(instr & 0b00110000) >> 4]
 
-                return f"LD [{dest}], A"
+                return f"LD A, [{r16mem}]"
+            case 0x8:
+                imm16 = (
+                    self.memory.read_byte(self.pc + 2)
+                ) << 8 | self.memory.read_byte(self.pc + 1)
+                imm16_hex = hex(imm16).upper()[2:]
+
+                return f"LD 0x{imm16_hex}, SP"
+            case 0x3 | 0x13 | 0x23 | 0x33:
+                r16 = R16[(instr & 0b00110000) >> 4]
+
+                return f"INC {r16}"
+            case 0xB | 0x1B | 0x2B | 0x3B:
+                r16 = R16[(instr & 0b00110000) >> 4]
+
+                return f"DEC {r16}"
+            case 0x9 | 0x19 | 0x29 | 0x39:
+                r16 = R16[(instr & 0b00110000) >> 4]
+
+                return f"ADD HL, {r16}"
+            case 0x4 | 0xC | 0x14 | 0x1C | 0x24 | 0x2C | 0x34 | 0x3C:
+                r8 = R8[(instr & 0b00111000) >> 3]
+
+                return f"INC {r8}"
+            case 0x5 | 0xD | 0x15 | 0x1D | 0x25 | 0x2D | 0x35 | 0x3D:
+                r8 = R8[(instr & 0b00111000) >> 3]
+
+                return f"DEC {r8}"
+            case 0x6 | 0xE | 0x16 | 0x1E | 0x26 | 0x2E | 0x36 | 0x3E:
+                r8 = R8[(instr & 0b00111000) >> 3]
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"LD {r8}, 0x{imm8_hex}"
+            case 0x7:
+                return "RLCA"
+            case 0xF:
+                return "RRCA"
+            case 0x17:
+                return "RLA"
+            case 0x1F:
+                return "RRA"
+            case 0x27:
+                return "DAA"
+            case 0x2F:
+                return "CPL"
+            case 0x37:
+                return "SCF"
+            case 0x3F:
+                return "CCF"
+            case 0x18:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"JR 0x{imm8_hex}"
             case 0x20 | 0x28 | 0x30 | 0x38:
                 cond = COND[(instr & 0b00011000) >> 3]
-                addr = sign_convert(self.memory.read_byte(self.pc + 1))
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
 
-                return f"JR {cond}, {addr}"
-            case 0x06 | 0x0E | 0x16 | 0x1E | 0x26 | 0x2E | 0x36 | 0x3E:
-                dest = R8[(instr & 0b00111000) >> 3]
-                source = self.memory.read_byte(self.pc + 1)
-                source_hex = hex(source).upper()[2:]
-
-                return f"LD {dest}, 0x{source_hex}"
-            case 0xE2:
-                return "LD [0xFF00+C], A"
-            case 0x04 | 0x0C | 0x14 | 0x1C | 0x24 | 0x2C | 0x34 | 0x3C:
-                operand = R8[(instr & 0b00111000) >> 3]
-
-                return f"INC {operand}"
-            case 0x03 | 0x13 | 0x23 | 0x33:
-                operand = R16[(instr & 0b00110000) >> 4]
-
-                return f"INC {operand}"
-            case 0x05 | 0x0D | 0x15 | 0x1D | 0x25 | 0x2D | 0x35 | 0x3D:
-                operand = R8[(instr & 0b00111000) >> 3]
-
-                return f"DEC {operand}"
-            case 0x0B | 0x1B | 0x2B | 0x3B:
-                operand = R16[(instr & 0b00110000) >> 4]
-
-                return f"DEC {operand}"
-            case 0x09 | 0x19 | 0x29 | 0x39:
-                operand = R16[(instr & 0b00110000) >> 4]
-
-                return f"ADD HL, {operand}"
+                return f"JR {cond} 0x{imm8_hex}"
+            case 0x10:
+                return "STOP"
             case (
                 0x40
                 | 0x41
@@ -122,7 +151,6 @@ class Debugger(CPU):
                 | 0x73
                 | 0x74
                 | 0x75
-                | 0x76
                 | 0x77
                 | 0x78
                 | 0x79
@@ -133,50 +161,180 @@ class Debugger(CPU):
                 | 0x7E
                 | 0x7F
             ):
-                dest = R8[(instr & 0b00111000) >> 3]
-                source = R8[instr & 0b00000111]
+                r8_dest = R8[(instr & 0b00111000) >> 3]
+                r8_source = R8[instr & 0b00000111]
 
-                return f"LD {dest}, {source}"
-            case 0xE0:
-                dest = self.memory.read_byte(self.pc + 1)
-                dest_hex = hex(dest).upper()[2:]
+                return f"LD {r8_dest}, {r8_source}"
+            case 0x76:
+                return "HALT"
+            case 0x80 | 0x81 | 0x82 | 0x83 | 0x84 | 0x85 | 0x86 | 0x87:
+                r8 = R8[instr & 0b00000111]
 
-                return f"LD [0xFF00+0x{dest_hex}], A"
-            case 0x0A | 0x1A | 0x2A | 0x3A:
-                source = R16MEM[(instr & 0b00110000) >> 4]
+                return f"ADD A, {r8}"
+            case 0x88 | 0x89 | 0x8A | 0x8B | 0x8C | 0x8D | 0x8E | 0x8F:
+                r8 = R8[instr & 0b00000111]
 
-                return f"LD A, [{source}]"
+                return f"ADC A, {r8}"
+            case 0x90 | 0x91 | 0x92 | 0x93 | 0x94 | 0x95 | 0x96 | 0x97:
+                r8 = R8[instr & 0b00000111]
+
+                return f"SUB A, {r8}"
+            case 0x98 | 0x99 | 0x9A | 0x9B | 0x9C | 0x9D | 0x9E | 0x9F:
+                r8 = R8[instr & 0b00000111]
+
+                return f"SBC, A, {r8}"
+            case 0xA0 | 0xA1 | 0xA2 | 0xA3 | 0xA4 | 0xA5 | 0xA6 | 0xA7:
+                r8 = R8[instr & 0b00000111]
+
+                return f"AND A, {r8}"
+            case 0xA8 | 0xA9 | 0xAA | 0xAB | 0xAC | 0xAD | 0xAE | 0xAF:
+                r8 = R8[instr & 0b00000111]
+
+                return f"XOR A, {r8}"
+            case 0xB0 | 0xB1 | 0xB2 | 0xB3 | 0xB4 | 0xB5 | 0xB6 | 0xB7:
+                r8 = R8[instr & 0b00000111]
+
+                return f"OR A, {r8}"
+            case 0xB8 | 0xB9 | 0xBA | 0xBB | 0xBC | 0xBD | 0xBE | 0xBF:
+                r8 = R8[instr & 0b00000111]
+
+                return f"CP A, {r8}"
+            case 0xC6:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"ADD A, 0x{imm8_hex}"
+            case 0xCE:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"ADC A, 0x{imm8_hex}"
+            case 0xD6:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"SUB A, 0x{imm8_hex}"
+            case 0xDE:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"SBC A, 0x{imm8_hex}"
+            case 0xE6:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"AND A, 0x{imm8_hex}"
+            case 0xEE:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"XOR A, 0x{imm8_hex}"
+            case 0xF6:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"OR A, 0x{imm8_hex}"
+            case 0xFE:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"CP A, 0x{imm8_hex}"
+            case 0xC0 | 0xC8 | 0xD0 | 0xD8:
+                cond = COND[(instr & 0b00011000) >> 3]
+
+                return f"RET {cond}"
+            case 0xC9:
+                return "RET"
+            case 0xD9:
+                return "RETI"
+            case 0xC2 | 0xCA | 0xD2 | 0xDA:
+                cond = COND[(instr & 0b00011000) >> 3]
+                imm16 = (
+                    self.memory.read_byte(self.pc + 2)
+                ) << 8 | self.memory.read_byte(self.pc + 1)
+                imm16_hex = hex(imm16).upper()[2:]
+
+                return f"JP {cond}, 0x{imm16_hex}"
+            case 0xC3:
+                imm16 = (
+                    self.memory.read_byte(self.pc + 2)
+                ) << 8 | self.memory.read_byte(self.pc + 1)
+                imm16_hex = hex(imm16).upper()[2:]
+
+                return f"JP 0x{imm16_hex}"
+            case 0xE9:
+                return "JP HL"
+            case 0xC4 | 0xCC | 0xD4 | 0xDC:
+                cond = COND[(instr & 0b00011000) >> 3]
+                imm16 = (
+                    self.memory.read_byte(self.pc + 2)
+                ) << 8 | self.memory.read_byte(self.pc + 1)
+                imm16_hex = hex(imm16).upper()[2:]
+
+                return f"CALL {cond}, 0x{imm16_hex}"
             case 0xCD:
-                addr = (
-                    self.memory.read_byte(self.pc + 2) << 8
-                ) | self.memory.read_byte(self.pc + 1)
-                addr_hex = hex(addr).upper()[2:]
+                imm16 = (
+                    self.memory.read_byte(self.pc + 2)
+                ) << 8 | self.memory.read_byte(self.pc + 1)
+                imm16_hex = hex(imm16).upper()[2:]
 
-                return f"CALL 0x{addr_hex}"
-            case 0xC5 | 0xD5 | 0xE5 | 0xF5:
-                register = R16STK[(instr & 0b00110000) >> 4]
+                return f"CALL 0x{imm16_hex}"
+            case 0xC7 | 0xCF | 0xD7 | 0xDF | 0xE7 | 0xEF | 0xF7 | 0xFF:
+                tgt3 = (instr & 0b00111000) >> 3
 
-                return f"PUSH {register}"
+                return f"TODO: Proper RST disasm. The TGT3 value is: {tgt3}"
             case 0xC1 | 0xD1 | 0xE1 | 0xF1:
-                register = R16STK[(instr & 0b00110000) >> 4]
+                r16stk = R16STK[(instr & 0b00110000) >> 4]
 
-                return f"POP {register}"
-            case 0b00000111:
-                return "RLCA"
-            case 0b00001111:
-                return "RRCA"
-            case 0b00010111:
-                return "RLA"
-            case 0b00011111:
-                return "RRA"
-            case 0b00100111:
-                return "DAA"
-            case 0b00101111:
-                return "CPL"
-            case 0b00110111:
-                return "SCF"
-            case 0b00111111:
-                return "CCF"
+                return f"POP {r16stk}"
+            case 0xC5 | 0xD5 | 0xE5 | 0xF5:
+                r16stk = R16STK[(instr & 0b00110000) >> 4]
+
+                return f"PUSH {r16stk}"
+            case 0xE2:
+                return f"LD [0xFF00+C], A"
+            case 0xE0:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"LD [0xFF00+0x{imm8_hex}], A"
+            case 0xEA:
+                imm16 = (
+                    self.memory.read_byte(self.pc + 2)
+                ) << 8 | self.memory.read_byte(self.pc + 1)
+                imm16_hex = hex(imm16).upper()[2:]
+
+                return f"LD [0x{imm16_hex}], A"
+            case 0xF2:
+                return f"LD A, [0xFF00+C]"
+            case 0xF0:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"LDH A, [0xFF00+0x{imm8_hex}]"
+            case 0xFA:
+                imm16 = (
+                    self.memory.read_byte(self.pc + 2)
+                ) << 8 | self.memory.read_byte(self.pc + 1)
+                imm16_hex = hex(imm16).upper()[2:]
+
+                return f"LD A, [0x{imm16_hex}]"
+            case 0xE8:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"ADD SP, 0x{imm8_hex}"
+            case 0xF8:
+                imm8 = self.memory.read_byte(self.pc + 1)
+                imm8_hex = hex(imm8).upper()[2:]
+
+                return f"LD HL, SP + 0x{imm8_hex}"
+            case 0xF9:
+                return f"LD SP, HL"
+            case 0xF3:
+                return "DI"
+            case 0xFB:
+                return "EI"
             case 0xCB:
                 instr = self.memory.read_byte(self.pc + 1)
                 match instr:
