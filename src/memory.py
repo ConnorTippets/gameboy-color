@@ -23,6 +23,8 @@ DEFAULT_ERAM_START = 0xA000
 OAM_SIZE = 0xA0
 DEFAULT_OAM_START = 0xFE00
 
+boot_rom_enabled = True
+
 
 class Readable:
     buf: bytearray
@@ -111,6 +113,8 @@ class IO(Readable, Writeable, MemoryMapped):
             return self.buf[addr]
         elif 0x40 <= addr and addr <= 0x4B:
             return self.buf[addr]
+        elif addr == 0x50:
+            return self.buf[addr]
         else:
             print(f"WARNING: ATTEMPTING TO READ UNMAPPED IO: 0x{hex(addr).upper()[2:]}")
             return 0xFF
@@ -125,10 +129,14 @@ class IO(Readable, Writeable, MemoryMapped):
             return 0xFFFF
 
     def write_byte(self, addr: int, val: int):
+        global boot_rom_enabled
         if 0x10 <= addr and addr <= 0x26:
             self.buf[addr] = val
         elif 0x40 <= addr and addr <= 0x4B:
             self.buf[addr] = val
+        elif addr == 0x50:
+            self.buf[addr] = val
+            boot_rom_enabled = not val
         else:
             print(f"WARNING: ATTEMPTING TO WRITE UNMAPPED IO 0x{hex(addr).upper()[2:]}")
 
@@ -160,7 +168,6 @@ class OAM(Readable, Writeable, MemoryMapped):
 class Memory:
     def __init__(self):
         self.boot_rom = BootROM()
-        self.boot_rom_enabled = True
         self.rom = ROM()
         self.wram = WRAM()
         self.vram = VRAM()
@@ -171,7 +178,7 @@ class Memory:
         self.game_rom = bytearray()
 
     def read_byte(self, addr: int) -> int:
-        if 0x0000 <= addr < 0x0100 and self.boot_rom_enabled:
+        if 0x0000 <= addr < 0x0100 and boot_rom_enabled:
             return self.boot_rom.read_byte(addr)
         if self.rom.start <= addr and addr < self.rom.end:
             return self.rom.read_byte(addr - self.rom.start)
@@ -195,7 +202,7 @@ class Memory:
             raise Exception(f"Invalid mem read: {hex(addr).upper()[2:]}")
 
     def read_word(self, addr: int) -> int:
-        if 0x0000 <= addr < 0x0100 and self.boot_rom_enabled:
+        if 0x0000 <= addr < 0x0100 and boot_rom_enabled:
             return self.boot_rom.read_word(addr)
         if self.rom.start <= addr and addr < self.rom.end:
             return self.rom.read_word(addr - self.rom.start)
