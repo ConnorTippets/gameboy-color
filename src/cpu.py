@@ -22,6 +22,7 @@ class CPU:
             "H": 0x00,
             "L": 0x00,
         }
+        self.interrupts_enabled = False
 
     def _bit(self, bit: int, reg: str):
         self.registers["F"] &= ~SUB_FLAG
@@ -1678,7 +1679,7 @@ class CPU:
 
     def _reti(self):
         self._ret()
-        # FIXME: IMPLEMENT INTERRUPTS!!!
+        self.interrupts_enabled = True
 
     def _jp_cond_imm16(self, cond):
         addr = self._get_imm16()
@@ -2124,9 +2125,9 @@ class CPU:
             case 0xF9:
                 self.sp = self._get_reg16("H", "L")  # ld sp, hl
             case 0xF3:
-                raise Exception("Implement interrupts!")  # di
+                self.interrupts_enabled = False  # di
             case 0xFB:
-                raise Exception("Implement interrupts!")  # ei
+                self.interrupts_enabled = True  # ei
             case 0x40:
                 self._ld_reg8_reg8("B", "B")  # LD B, B
             case 0x41:
