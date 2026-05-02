@@ -1123,7 +1123,7 @@ class CPU:
     def _rrca(self):
         new_carry = self.registers["A"] & 0b1
 
-        lsb = ((self.registers["A"] >> 1) & 0xFF) | new_carry
+        lsb = ((self.registers["A"] >> 1) & 0xFF) | (new_carry << 7)
 
         if new_carry:
             self.registers["F"] |= CARRY_FLAG
@@ -1171,7 +1171,7 @@ class CPU:
         self.registers["A"] = lsb
 
     def _cpl(self):
-        self.registers["A"] = ~self.registers["A"]
+        self.registers["A"] = (~self.registers["A"]) & 0xFF
         self.registers["F"] |= SUB_FLAG
         self.registers["F"] |= HALF_CARRY_FLAG
 
@@ -1247,12 +1247,12 @@ class CPU:
         self.registers["F"] &= ~SUB_FLAG
         self.registers["F"] &= ~ZERO_FLAG
 
-        if ((self.sp ^ value ^ (result & 0xFFFF)) & 0x100) == 0x100:
+        if (self.sp & 0xFF) + (value & 0xFF) > 0xFF:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
 
-        if ((self.sp ^ value ^ (result & 0xFFFF)) & 0x10) == 0x10:
+        if (self.sp & 0xF) + (value & 0xF) > 0xF:
             self.registers["F"] |= HALF_CARRY_FLAG
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
@@ -1720,12 +1720,12 @@ class CPU:
         self.registers["F"] &= ~SUB_FLAG
         self.registers["F"] &= ~ZERO_FLAG
 
-        if ((self.sp ^ value ^ (result & 0xFFFF)) & 0x100) == 0x100:
+        if (self.sp & 0xFF) + (value & 0xFF) > 0xFF:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
 
-        if ((self.sp ^ value ^ (result & 0xFFFF)) & 0x10) == 0x10:
+        if (self.sp & 0xF) + (value & 0xF) > 0xF:
             self.registers["F"] |= HALF_CARRY_FLAG
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
