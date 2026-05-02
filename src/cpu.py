@@ -101,7 +101,7 @@ class CPU:
     def _rrc_reg(self, reg: str):
         new_carry = self.registers[reg] & 0b1
 
-        lsb = ((self.registers[reg] >> 1) & 0xFF) | new_carry
+        lsb = ((self.registers[reg] >> 1) & 0xFF) | (new_carry << 7)
 
         if new_carry:
             self.registers["F"] |= CARRY_FLAG
@@ -123,7 +123,7 @@ class CPU:
         value = self.memory.read_byte(hl)
         new_carry = value & 0b1
 
-        lsb = ((value >> 1) & 0xFF) | new_carry
+        lsb = ((value >> 1) & 0xFF) | (new_carry << 7)
 
         if new_carry:
             self.registers["F"] |= CARRY_FLAG
