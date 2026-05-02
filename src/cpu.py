@@ -1066,7 +1066,7 @@ class CPU:
         result = data + 1
         self.registers["F"] &= ~SUB_FLAG
 
-        if result == 0:
+        if (result & 0xFF) == 0:
             self.registers["F"] |= ZERO_FLAG
         else:
             self.registers["F"] &= ~ZERO_FLAG
@@ -1076,7 +1076,7 @@ class CPU:
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self.memory.write_byte(hl, result & 0xFFFF)
+        self.memory.write_byte(hl, result & 0xFF)
 
     def _dec_hl(self):
         hl = self._get_reg16("H", "L")
@@ -1084,7 +1084,7 @@ class CPU:
         result = data - 1
         self.registers["F"] |= SUB_FLAG
 
-        if result == 0:
+        if (result & 0xFF) == 0:
             self.registers["F"] |= ZERO_FLAG
         else:
             self.registers["F"] &= ~ZERO_FLAG
@@ -1094,7 +1094,7 @@ class CPU:
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self.memory.write_byte(hl, result & 0xFFFF)
+        self.memory.write_byte(hl, result & 0xFF)
 
     def _get_imm8(self):
         imm8 = self.memory.read_byte(self.pc)
@@ -1196,16 +1196,16 @@ class CPU:
 
     def _add_a_reg(self, reg: str):
         value = self.registers[reg]
-        result = (value + self.registers["A"]) & 0xFF
+        result = value + self.registers["A"]
 
         self.registers["F"] &= ~SUB_FLAG
 
-        if result == 0:
+        if (result & 0xFF) == 0:
             self.registers["F"] |= ZERO_FLAG
         else:
             self.registers["F"] &= ~ZERO_FLAG
 
-        if result & 0xFF00 != 0:
+        if result & 0x100 != 0:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
@@ -1215,20 +1215,20 @@ class CPU:
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self.registers["A"] = result
+        self.registers["A"] = result & 0xFF
 
     def _add_a_imm8(self):
         value = self._get_imm8()
-        result = (value + self.registers["A"]) & 0xFF
+        result = value + self.registers["A"]
 
         self.registers["F"] &= ~SUB_FLAG
 
-        if result == 0:
+        if (result & 0xFF) == 0:
             self.registers["F"] |= ZERO_FLAG
         else:
             self.registers["F"] &= ~ZERO_FLAG
 
-        if result & 0xFF00 != 0:
+        if result & 0x100 != 0:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
@@ -1238,39 +1238,39 @@ class CPU:
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self.registers["A"] = result
+        self.registers["A"] = result & 0xFF
 
     def _add_sp_imm8(self):
         value = sign_convert(self._get_imm8())
-        result = (value + self.sp) & 0xFFFF
+        result = value + self.sp
 
         self.registers["F"] &= ~SUB_FLAG
         self.registers["F"] &= ~ZERO_FLAG
 
-        if result & 0xFFFF0000 != 0:
+        if ((self.sp ^ value ^ (result & 0xFFFF)) & 0x100) == 0x100:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
 
-        if (self.sp & 0xFF) + (value & 0xFF) > 0xFF:
+        if ((self.sp ^ value ^ (result & 0xFFFF)) & 0x10) == 0x10:
             self.registers["F"] |= HALF_CARRY_FLAG
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self.sp = result
+        self.sp = result & 0xFFFF
 
     def _add_a_hl(self):
         value = self.memory.read_byte(self._get_reg16("H", "L"))
-        result = (value + self.registers["A"]) & 0xFF
+        result = value + self.registers["A"]
 
         self.registers["F"] &= ~SUB_FLAG
 
-        if result == 0:
+        if (result & 0xFF) == 0:
             self.registers["F"] |= ZERO_FLAG
         else:
             self.registers["F"] &= ~ZERO_FLAG
 
-        if result & 0xFF00 != 0:
+        if result & 0x100 != 0:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
@@ -1280,21 +1280,21 @@ class CPU:
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self.registers["A"] = result
+        self.registers["A"] = result & 0xFF
 
     def _adc_a_reg(self, reg: str):
         value = self.registers[reg]
         carry = (self.registers["F"] & CARRY_FLAG) >> 4
-        result = (value + self.registers["A"] + carry) & 0xFF
+        result = value + self.registers["A"] + carry
 
         self.registers["F"] &= ~SUB_FLAG
 
-        if result == 0:
+        if (result & 0xFF) == 0:
             self.registers["F"] |= ZERO_FLAG
         else:
             self.registers["F"] &= ~ZERO_FLAG
 
-        if result & 0xFF00 != 0:
+        if result & 0x100 != 0:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
@@ -1304,21 +1304,21 @@ class CPU:
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self.registers["A"] = result
+        self.registers["A"] = result & 0xFF
 
     def _adc_a_imm8(self):
         value = self._get_imm8()
         carry = (self.registers["F"] & CARRY_FLAG) >> 4
-        result = (value + self.registers["A"] + carry) & 0xFF
+        result = value + self.registers["A"] + carry
 
         self.registers["F"] &= ~SUB_FLAG
 
-        if result == 0:
+        if (result & 0xFF) == 0:
             self.registers["F"] |= ZERO_FLAG
         else:
             self.registers["F"] &= ~ZERO_FLAG
 
-        if result & 0xFF00 != 0:
+        if result & 0x100 != 0:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
@@ -1328,21 +1328,21 @@ class CPU:
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self.registers["A"] = result
+        self.registers["A"] = result & 0xFF
 
     def _adc_a_hl(self):
         value = self.memory.read_byte(self._get_reg16("H", "L"))
         carry = (self.registers["F"] & CARRY_FLAG) >> 4
-        result = (value + self.registers["A"] + carry) & 0xFF
+        result = value + self.registers["A"] + carry
 
         self.registers["F"] &= ~SUB_FLAG
 
-        if result == 0:
+        if (result & 0xFF) == 0:
             self.registers["F"] |= ZERO_FLAG
         else:
             self.registers["F"] &= ~ZERO_FLAG
 
-        if result & 0xFF00 != 0:
+        if result & 0x100 != 0:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
@@ -1352,7 +1352,7 @@ class CPU:
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self.registers["A"] = result
+        self.registers["A"] = result & 0xFF
 
     def _sub_a_reg(self, reg: str):
         value = self.registers[reg]
@@ -1667,14 +1667,14 @@ class CPU:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
     def _ret_cond(self, cond):
-        addr = self.memory.read_word(self.sp)
-        self.sp += 2
         if cond:
+            addr = self.memory.read_word(self.sp)
+            self.sp = (self.sp + 2) & 0xFFFF
             self.pc = addr
 
     def _ret(self):
         addr = self.memory.read_word(self.sp)
-        self.sp += 2
+        self.sp = (self.sp + 2) & 0xFFFF
         self.pc = addr
 
     def _reti(self):
@@ -1689,48 +1689,48 @@ class CPU:
     def _call_cond_imm16(self, cond):
         addr = self._get_imm16()
         if cond:
-            self.sp -= 2
+            self.sp = (self.sp - 2) & 0xFFFF
             self.memory.write_word(self.sp, self.pc)
             self.pc = addr
 
     def _call_imm16(self):
         addr = self._get_imm16()
-        self.sp -= 2
+        self.sp = (self.sp - 2) & 0xFFFF
         self.memory.write_word(self.sp, self.pc)
         self.pc = addr
 
     def _rst(self, target: int):
-        self.sp -= 2
+        self.sp = (self.sp - 2) & 0xFFFF
         self.memory.write_word(self.sp, self.pc)
         self.pc = target
 
     def _pop(self, reg_high: str, reg_low: str):
         data = self.memory.read_word(self.sp)
-        self.sp += 2
+        self.sp = (self.sp + 2) & 0xFFFF
         self._set_reg16(reg_high, reg_low, data)
 
     def _push(self, reg_high: str, reg_low: str):
-        self.sp -= 2
+        self.sp = (self.sp - 2) & 0xFFFF
         self.memory.write_word(self.sp, self._get_reg16(reg_high, reg_low))
 
     def _ld_hl_sp_imm8(self):
         value = sign_convert(self._get_imm8())
-        result = (value + self.sp) & 0xFFFF
+        result = value + self.sp
 
         self.registers["F"] &= ~SUB_FLAG
         self.registers["F"] &= ~ZERO_FLAG
 
-        if result & 0xFFFF0000 != 0:
+        if ((self.sp ^ value ^ (result & 0xFFFF)) & 0x100) == 0x100:
             self.registers["F"] |= CARRY_FLAG
         else:
             self.registers["F"] &= ~CARRY_FLAG
 
-        if (self.sp & 0xFF) + (value & 0xFF) > 0xFF:
+        if ((self.sp ^ value ^ (result & 0xFFFF)) & 0x10) == 0x10:
             self.registers["F"] |= HALF_CARRY_FLAG
         else:
             self.registers["F"] &= ~HALF_CARRY_FLAG
 
-        self._set_reg16("H", "L", result)
+        self._set_reg16("H", "L", result & 0xFFFF)
 
     def _ld_reg8_reg8(self, dest: str, src: str):
         self.registers[dest] = self.registers[src]
@@ -1773,7 +1773,7 @@ class CPU:
             case 0x3A:
                 self._ld_reg8_hld("A")  # ld a, [HL-]
             case 0x8:
-                self.memory.write_byte(self._get_imm16(), self.sp)  # ld [imm16], sp
+                self.memory.write_word(self._get_imm16(), self.sp)  # ld [imm16], sp
             case 0x3:
                 self._inc_reg16("B", "C")  # inc BC
             case 0x13:
@@ -1781,7 +1781,7 @@ class CPU:
             case 0x23:
                 self._inc_reg16("H", "L")  # inc HL
             case 0x33:
-                self.sp += 1  # inc SP
+                self.sp = (self.sp + 1) & 0xFFFF  # inc SP
             case 0xB:
                 self._dec_reg16("B", "C")  # dec BC
             case 0x1B:
@@ -1789,7 +1789,7 @@ class CPU:
             case 0x2B:
                 self._dec_reg16("H", "L")  # dec HL
             case 0x3B:
-                self.sp -= 1  # dec SP
+                self.sp = (self.sp - 1) & 0xFFFF  # dec SP
             case 0x9:
                 self._add_hl_reg16("B", "C")  # add hl, BC
             case 0x19:

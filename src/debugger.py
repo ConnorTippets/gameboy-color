@@ -280,7 +280,7 @@ class Debugger(CPU):
             case 0xC7 | 0xCF | 0xD7 | 0xDF | 0xE7 | 0xEF | 0xF7 | 0xFF:
                 tgt3 = (instr & 0b00111000) >> 3
 
-                return f"TODO: Proper RST disasm. The TGT3 value is: {tgt3}"
+                return f"RST {tgt3*8}"
             case 0xC1 | 0xD1 | 0xE1 | 0xF1:
                 r16stk = R16STK[(instr & 0b00110000) >> 4]
 
@@ -590,12 +590,33 @@ class Debugger(CPU):
         run_forever = False
         run_until_unknown = False
         run_until_pc = -1
+        run_until_sp = -1
         while True:
+            if run_until_sp > -1:
+                if self.sp == run_until_sp:
+                    run_until_sp = -1
+                    continue
+
+                # if self.pc > run_until_pc:
+                #     print("WE MISSED!")
+                #     run_until_pc = -1
+                #     continue
+
+                print(self.disasm())
+                self.step()
+                continue
+
             if run_until_pc > -1:
                 if self.pc == run_until_pc:
                     run_until_pc = -1
                     continue
 
+                # if self.pc > run_until_pc:
+                #     print("WE MISSED!")
+                #     run_until_pc = -1
+                #     continue
+
+                print(self.disasm())
                 self.step()
                 continue
 
@@ -613,7 +634,14 @@ class Debugger(CPU):
                 sp = self.sp
                 regs = self.registers.copy()
                 try:
-                    print(self.disasm())
+                    print(
+                        "0x"
+                        + hex(pc).upper()[2:]
+                        + ": "
+                        + self.disasm()
+                        + " | "
+                        + str(regs)
+                    )
                     self.step()
                 except Exception as e:
                     self.pc = pc
@@ -724,6 +752,19 @@ class Debugger(CPU):
                     continue
 
                 run_until_pc = addr
+                continue
+
+            if cmd.lower().startswith("run until sp ="):
+                operand = cmd.lower().replace("run until sp =", "").strip()
+
+                addr: int = 0
+                try:
+                    addr = int(operand, 16)
+                except ValueError:
+                    print(f"Unknown address format: {operand}")
+                    continue
+
+                run_until_sp = addr
                 continue
 
             if cmd.lower().startswith("step ") and cmd.lower().endswith(" times"):

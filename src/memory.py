@@ -1,3 +1,5 @@
+import functools
+
 # i'll handle bank switching later
 WRAM_SIZE = 8 * 1024
 DEFAULT_WRAM_START = 0xC000
@@ -51,7 +53,7 @@ class MemoryMapped:
     start: int
     size: int
 
-    @property
+    @functools.cached_property
     def end(self):
         return self.start + self.size
 
@@ -109,7 +111,13 @@ class IO(Readable, Writeable, MemoryMapped):
         self.size = IO_SIZE
 
     def read_byte(self, addr: int) -> int:
-        if 0x10 <= addr and addr <= 0x26:
+        if addr in [0x01, 0x02]:
+            return self.buf[addr]
+        elif 0x04 <= addr and addr <= 0x07:
+            return self.buf[addr]
+        elif 0x10 <= addr and addr <= 0x26:
+            return self.buf[addr]
+        elif addr == 0x0F:
             return self.buf[addr]
         elif 0x40 <= addr and addr <= 0x4B:
             return self.buf[addr]
@@ -120,7 +128,11 @@ class IO(Readable, Writeable, MemoryMapped):
             return 0xFF
 
     def read_word(self, addr: int) -> int:
-        if 0x10 <= addr and addr <= 0x26:
+        if addr in [0x01, 0x02]:
+            return (self.buf[addr + 1] << 8) | self.buf[addr]
+        elif 0x04 <= addr and addr <= 0x07:
+            return (self.buf[addr + 1] << 8) | self.buf[addr]
+        elif 0x10 <= addr and addr <= 0x26:
             return (self.buf[addr + 1] << 8) | self.buf[addr]
         elif 0x40 <= addr and addr <= 0x4B:
             return (self.buf[addr + 1] << 8) | self.buf[addr]
@@ -130,7 +142,13 @@ class IO(Readable, Writeable, MemoryMapped):
 
     def write_byte(self, addr: int, val: int):
         global boot_rom_enabled
-        if 0x10 <= addr and addr <= 0x26:
+        if addr in [0x01, 0x02]:
+            self.buf[addr] = val
+        elif 0x04 <= addr and addr <= 0x07:
+            self.buf[addr] = val
+        elif 0x10 <= addr and addr <= 0x26:
+            self.buf[addr] = val
+        elif addr == 0x0F:
             self.buf[addr] = val
         elif 0x40 <= addr and addr <= 0x4B:
             self.buf[addr] = val
@@ -141,7 +159,13 @@ class IO(Readable, Writeable, MemoryMapped):
             print(f"WARNING: ATTEMPTING TO WRITE UNMAPPED IO 0x{hex(addr).upper()[2:]}")
 
     def write_word(self, addr: int, val: int):
-        if 0x10 <= addr and addr <= 0x26:
+        if addr in [0x01, 0x02]:
+            self.buf[addr] = val & 0xFF
+            self.buf[addr + 1] = (val & 0xFF00) >> 8
+        elif 0x04 <= addr and addr <= 0x07:
+            self.buf[addr] = val & 0xFF
+            self.buf[addr + 1] = (val & 0xFF00) >> 8
+        elif 0x10 <= addr and addr <= 0x26:
             self.buf[addr] = val & 0xFF
             self.buf[addr + 1] = (val & 0xFF00) >> 8
         elif 0x40 <= addr and addr <= 0x4B:
